@@ -4,313 +4,326 @@
   <meta charset="UTF-8">
   <title>VK INFRASTRUCTURE</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#f4f6f9; margin:0; padding:0; }
-    header { background:#2c3e50; color:#fff; padding:15px; text-align:center; font-size:22px; }
+    body { font-family: Arial, sans-serif; background:#eef2f5; margin:0; padding:0; }
     .page { display:none; padding:20px; }
-    .active { display:block; }
-    .container { max-width:95%; margin:20px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-    input, select, textarea, button { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
-    button { background:#2c3e50; color:#fff; font-weight:bold; cursor:pointer; }
-    button:hover { background:#1a252f; }
-    .dashboard button { margin:10px 0; }
-    table { width:100%; border-collapse:collapse; margin-top:15px; }
-    th, td { border:1px solid #aaa; padding:8px; text-align:left; font-size:14px; }
-    th { background:#2c3e50; color:white; }
-    .actions button { width:auto; margin:2px; padding:5px 8px; font-size:12px; }
+    .page.active { display:block; }
+    .container { max-width:1000px; margin:auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+    h2,h3 { text-align:center; }
+    input,select,textarea,button { width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:8px; }
+    button { background:#2a3248; color:white; cursor:pointer; font-weight:bold; }
+    button:hover { background:#3d4663; }
+    table { width:100%; border-collapse:collapse; margin-top:15px; font-size:14px; }
+    th,td { border:1px solid #333; padding:6px; text-align:center; }
+    th { background:#2a3248; color:white; }
+    .actions button { width:auto; margin:2px; padding:4px 8px; font-size:12px; }
   </style>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-  <header>VK INFRASTRUCTURE</header>
 
-  <!-- 🔑 Login Page -->
-  <div id="loginPage" class="page active">
-    <div class="container">
-      <h3>🔐 LOGIN</h3>
-      <input type="text" id="loginId" placeholder="Enter ID">
-      <input type="password" id="loginPass" placeholder="Enter Password">
-      <button onclick="login()">Login</button>
-    </div>
+<!-- 🔐 Login Page -->
+<div id="loginPage" class="page active">
+  <div class="container">
+    <h2>VK INFRASTRUCTURE</h2>
+    <input type="text" id="loginId" placeholder="Enter ID">
+    <input type="password" id="loginPass" placeholder="Enter Password">
+    <button onclick="login()">🔐 LOGIN</button>
   </div>
+</div>
 
-  <!-- 📊 Dashboard -->
-  <div id="dashboard" class="page">
-    <div class="container dashboard">
-      <h3>Dashboard</h3>
-      <button onclick="openPage('dataEntry')">📝 Data Entry</button>
-      <button onclick="loadReports()">📑 Reports</button>
-      <button onclick="openPage('overallReport')">📋 Overall Report</button>
-      <button onclick="openPage('changePassword')">🔒 Change Password</button>
-      <button onclick="logout()">🚪 Logout</button>
-    </div>
+<!-- 📊 Dashboard -->
+<div id="dashboard" class="page">
+  <div class="container dashboard">
+    <h3>Dashboard</h3>
+    <button onclick="openPage('dataEntry')" id="dataEntryBtn">📝 Data Entry</button>
+    <button onclick="loadReports()">📑 Reports</button>
+    <button onclick="openPage('overallReport')">📋 Overall Report</button>
+    <button id="adminPassBtn" onclick="openPage('changeAdminPassword')">🔒 Change Admin Password</button>
+    <button id="viewerPassBtn" onclick="openPage('changeViewerPassword')">🔒 Change Viewer Password</button>
+    <button onclick="logout()">🚪 Logout</button>
   </div>
+</div>
 
-  <!-- 📝 Data Entry -->
-  <div id="dataEntry" class="page">
-    <div class="container">
-      <h3>Data Entry</h3>
-      <label>Date</label><input type="date" id="date">
-      <label>Vehicle Type</label><input type="text" id="vehicleType">
-      <label>Vehicle Number</label><input type="text" id="vehicleNumber">
-      <label>Driver Name</label><input type="text" id="driver">
-      <label>Morning Start</label><input type="time" id="mStart">
-      <label>Morning End</label><input type="time" id="mEnd">
-      <label>Afternoon Start</label><input type="time" id="aStart">
-      <label>Afternoon End</label><input type="time" id="aEnd">
-      <label>Diesel (L)</label><input type="number" id="diesel">
-      <label>Engage</label>
-      <select id="engage"><option>Full Day</option><option>Half Day</option></select>
-      <label>Description</label><textarea id="desc"></textarea>
-      <button id="saveBtn">💾 Save</button>
-      <button onclick="backToDashboard()">🔙 Back</button>
-    </div>
+<!-- 📝 Data Entry -->
+<div id="dataEntry" class="page">
+  <div class="container">
+    <h3>Data Entry</h3>
+    <input type="hidden" id="editIndex" value="">
+    <input type="date" id="date">
+    <input type="text" id="vehicleType" placeholder="Vehicle Type">
+    <input type="text" id="vehicleNumber" placeholder="Vehicle Number">
+    <input type="text" id="driver" placeholder="Driver Name">
+    <label>Morning Start</label><input type="time" id="morningStart">
+    <label>Morning End</label><input type="time" id="morningEnd">
+    <label>Afternoon Start</label><input type="time" id="afternoonStart">
+    <label>Afternoon End</label><input type="time" id="afternoonEnd">
+    <input type="number" id="diesel" placeholder="Diesel Liters">
+    <select id="engage">
+      <option value="Full Day">Full Day</option>
+      <option value="Half Day">Half Day</option>
+    </select>
+    <textarea id="description" placeholder="Description"></textarea>
+    <button onclick="saveData()">💾 Save</button>
+    <button onclick="backToDashboard()">🔙 Back</button>
   </div>
+</div>
 
-  <!-- 📑 Reports -->
-  <div id="reports" class="page">
-    <div class="container">
-      <h3>Reports</h3>
-
-      <!-- 🔍 Date Filter -->
-      <label>From Date</label>
-      <input type="date" id="reportFrom">
-      <label>To Date</label>
-      <input type="date" id="reportTo">
-      <button onclick="loadReports()">🔍 Filter</button>
-
-      <table id="reportTable">
-        <thead>
-          <tr>
-            <th>Date</th><th>Vehicle</th><th>No</th><th>Driver</th>
-            <th>Morning</th><th>Afternoon</th><th>Diesel</th>
-            <th>Engage</th><th>Description</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <br>
-      <button onclick="exportCSV()">⬇️ CSV</button>
-      <button onclick="printReport()">🖨️ Print</button>
-      <button onclick="exportPDF()">📄 PDF</button>
-      <button onclick="backToDashboard()">🔙 Back</button>
-    </div>
+<!-- 📑 Reports -->
+<div id="reports" class="page">
+  <div class="container">
+    <h3>Reports</h3>
+    <input type="date" id="reportDate">
+    <button onclick="loadReports()">🔍 Search</button>
+    <table id="reportTable">
+      <thead>
+        <tr>
+          <th>Date</th><th>Vehicle Type</th><th>Vehicle No</th><th>Driver</th>
+          <th>Morning</th><th>Afternoon</th><th>Diesel</th><th>Engage</th><th>Description</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="exportCSV()">⬇️ CSV</button>
+    <button onclick="exportPDF()">📄 PDF</button>
+    <button onclick="window.print()">🖨️ Print</button>
+    <button onclick="backToDashboard()">🔙 Back</button>
   </div>
+</div>
 
-  <!-- 📋 Overall Report -->
-  <div id="overallReport" class="page">
-    <div class="container">
-      <h3>Overall Report</h3>
-      <label>From</label><input type="date" id="fromDate">
-      <label>To</label><input type="date" id="toDate">
-      <button onclick="generateOverallReport()">Generate</button>
-      <table id="overallTable">
-        <thead>
-          <tr>
-            <th>Driver</th><th>Vehicle</th><th>No</th>
-            <th>Total Days</th><th>Total Hours</th><th>Total Diesel</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button onclick="backToDashboard()">🔙 Back</button>
-    </div>
+<!-- 📋 Overall Report -->
+<div id="overallReport" class="page">
+  <div class="container">
+    <h3>Overall Report</h3>
+    <label>From</label><input type="date" id="fromDate">
+    <label>To</label><input type="date" id="toDate">
+    <button onclick="loadOverall()">🔍 Generate</button>
+    <table id="overallTable">
+      <thead>
+        <tr>
+          <th>Driver</th><th>Vehicle Type</th><th>Vehicle No</th>
+          <th>Total Hours</th><th>Total Days</th><th>Total Diesel</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="exportOverallPDF()">📄 PDF</button>
+    <button onclick="window.print()">🖨️ Print</button>
+    <button onclick="backToDashboard()">🔙 Back</button>
   </div>
+</div>
 
-  <!-- 🔒 Change Password -->
-  <div id="changePassword" class="page">
-    <div class="container">
-      <h3>Change Password</h3>
-      <input type="password" id="oldPass" placeholder="Old Password">
-      <input type="password" id="newPass" placeholder="New Password">
-      <button onclick="changePassword()">Save Password</button>
-      <button onclick="backToDashboard()">🔙 Back</button>
-    </div>
+<!-- 🔑 Change Admin Password -->
+<div id="changeAdminPassword" class="page">
+  <div class="container">
+    <h3>Change Admin Password</h3>
+    <input type="password" id="oldAdminPass" placeholder="Old Admin Password">
+    <input type="password" id="newAdminPass" placeholder="New Admin Password">
+    <button onclick="changeAdminPassword()">Save Password</button>
+    <button onclick="backToDashboard()">🔙 Back</button>
   </div>
+</div>
 
-  <!-- 🔥 Firebase + JS -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+<!-- 🔑 Change Viewer Password -->
+<div id="changeViewerPassword" class="page">
+  <div class="container">
+    <h3>Change Viewer Password</h3>
+    <input type="password" id="oldViewerPass" placeholder="Old Viewer Password">
+    <input type="password" id="newViewerPass" placeholder="New Viewer Password">
+    <button onclick="changeViewerPassword()">Save Password</button>
+    <button onclick="backToDashboard()">🔙 Back</button>
+  </div>
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDEoXnmRndIWlXgEExOsqscSGqhgy8IqVI",
-      authDomain: "vk-infra.firebaseapp.com",
-      projectId: "vk-infra",
-      storageBucket: "vk-infra.firebasestorage.app",
-      messagingSenderId: "8449193426",
-      appId: "1:8449193426:web:bbd5d1139e045fbcf7c40b"
-    };
+<script>
+let userRole="";
+if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","Rajesh@1234");
+if(!localStorage.getItem("viewerPass")) localStorage.setItem("viewerPass","Viewer");
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+// Page control
+function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function openPage(id){ showPage(id); }
+function backToDashboard(){ showPage("dashboard"); }
 
-    // Save Entry
-    document.getElementById("saveBtn").addEventListener("click", async () => {
-      let entry = {
-        date: document.getElementById("date").value,
-        vehicleType: document.getElementById("vehicleType").value,
-        vehicleNumber: document.getElementById("vehicleNumber").value,
-        driver: document.getElementById("driver").value,
-        morningStart: document.getElementById("mStart").value,
-        morningEnd: document.getElementById("mEnd").value,
-        afternoonStart: document.getElementById("aStart").value,
-        afternoonEnd: document.getElementById("aEnd").value,
-        diesel: parseFloat(document.getElementById("diesel").value) || 0,
-        engage: document.getElementById("engage").value,
-        description: document.getElementById("desc").value
-      };
-      await addDoc(collection(db, "logs"), entry);
-      alert("✅ Saved!");
-      backToDashboard();
-    });
+// ---- LOGIN ----
+function login(){
+  let id=document.getElementById("loginId").value.trim();
+  let pass=document.getElementById("loginPass").value.trim();
+  let adminPass=localStorage.getItem("adminPass");
+  let viewerPass=localStorage.getItem("viewerPass");
 
-    // Load Reports with date filter
-    window.loadReports = async function() {
-      let tbody = document.querySelector("#reportTable tbody");
-      tbody.innerHTML = "";
+  if(id==="VK INFRA" && pass===adminPass){
+    userRole="admin"; showPage("dashboard"); setupDashboard();
+  }
+  else if(id==="VK INFRA" && pass===viewerPass){
+    userRole="viewer"; showPage("dashboard"); setupDashboard();
+  }
+  else { alert("❌ Invalid ID or Password"); }
+}
 
-      let from = document.getElementById("reportFrom")?.value || "";
-      let to = document.getElementById("reportTo")?.value || "";
+// Dashboard setup
+function setupDashboard(){
+  document.getElementById("dataEntryBtn").style.display = userRole==="admin"?"block":"none";
+  document.getElementById("adminPassBtn").style.display = userRole==="admin"?"block":"none";
+  document.getElementById("viewerPassBtn").style.display = userRole==="admin"?"block":"none";
+}
 
-      const snapshot = await getDocs(collection(db, "logs"));
-      snapshot.forEach(snap => {
-        let d = snap.data();
+// Logout
+function logout(){ userRole=""; showPage("loginPage"); }
 
-        // Date Filter
-        if ((from && d.date < from) || (to && d.date > to)) return;
+// Save data (with edit support)
+function saveData(){
+  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+  let idx=document.getElementById("editIndex").value;
 
-        tbody.innerHTML += `<tr>
-          <td>${d.date}</td>
-          <td>${d.vehicleType}</td>
-          <td>${d.vehicleNumber}</td>
-          <td>${d.driver}</td>
-          <td>${d.morningStart} - ${d.morningEnd}</td>
-          <td>${d.afternoonStart} - ${d.afternoonEnd}</td>
-          <td>${d.diesel}</td>
-          <td>${d.engage}</td>
-          <td>${d.description}</td>
-          <td class="actions">
-            <button onclick="editEntry('${snap.id}','${d.driver}')">✏️</button>
-            <button onclick="deleteEntry('${snap.id}')">🗑️</button>
-            <button onclick="shareWhatsApp('${d.driver}','${d.vehicleNumber}','${d.date}')">📲</button>
-          </td>
-        </tr>`;
-      });
-      showPage("reports");
+  let data={
+    date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value,
+    driver:driver.value, morningStart:morningStart.value, morningEnd:morningEnd.value,
+    afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
+    diesel:diesel.value, engage:engage.value, description:description.value
+  };
+
+  if(idx!==""){   // edit existing
+    logs[idx]=data;
+    document.getElementById("editIndex").value="";
+    alert("✏️ Entry Updated!");
+  } else {        // new entry
+    logs.push(data);
+    alert("✅ Data Saved!");
+  }
+
+  localStorage.setItem("logs",JSON.stringify(logs));
+  backToDashboard();
+}
+
+// Load reports
+function loadReports(){
+  showPage("reports");
+  let date=document.getElementById("reportDate").value;
+  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+  let tbody=document.querySelector("#reportTable tbody"); tbody.innerHTML="";
+  logs.filter(d=>!date || d.date===date).forEach((d,i)=>{
+    let actions="";
+    if(userRole==="admin"){
+      actions+=`<button onclick="editEntry(${i})">✏️</button>`;
+      actions+=`<button onclick="deleteEntry(${i})">🗑️</button>`;
     }
+    tbody.innerHTML+=`<tr>
+      <td>${d.date}</td><td>${d.vehicleType}</td><td>${d.vehicleNumber}</td><td>${d.driver}</td>
+      <td>${d.morningStart}-${d.morningEnd}</td><td>${d.afternoonStart}-${d.afternoonEnd}</td>
+      <td>${d.diesel}</td><td>${d.engage}</td><td>${d.description}</td><td>${actions}</td>
+    </tr>`;
+  });
+}
 
-    // Delete Entry
-    window.deleteEntry = async function(id) {
-      if(confirm("Delete this entry?")) {
-        await deleteDoc(doc(db, "logs", id));
-        loadReports();
-      }
-    }
+// Edit entry
+function editEntry(i){
+  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+  let d=logs[i];
+  document.getElementById("editIndex").value=i;
+  date.value=d.date; vehicleType.value=d.vehicleType; vehicleNumber.value=d.vehicleNumber;
+  driver.value=d.driver; morningStart.value=d.morningStart; morningEnd.value=d.morningEnd;
+  afternoonStart.value=d.afternoonStart; afternoonEnd.value=d.afternoonEnd;
+  diesel.value=d.diesel; engage.value=d.engage; description.value=d.description;
+  showPage("dataEntry");
+}
 
-    // Edit Entry (Driver only for demo)
-    window.editEntry = async function(id, oldDriver) {
-      let newDriver = prompt("Enter new driver name:", oldDriver);
-      if(newDriver) {
-        await updateDoc(doc(db, "logs", id), { driver: newDriver });
-        loadReports();
-      }
-    }
+// Delete
+function deleteEntry(i){
+  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+  logs.splice(i,1);
+  localStorage.setItem("logs",JSON.stringify(logs));
+  loadReports();
+}
 
-    // WhatsApp Share
-    window.shareWhatsApp = function(driver, vehicle, date) {
-      let msg = `VK INFRA Report%0ADriver: ${driver}%0AVehicle: ${vehicle}%0ADate: ${date}`;
-      window.open(`https://wa.me/?text=${msg}`, "_blank");
-    }
+// Export CSV
+function exportCSV(){
+  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+  let csv="Date,Vehicle Type,Vehicle No,Driver,Morning,Afternoon,Diesel,Engage,Description\n";
+  logs.forEach(d=>{
+    csv+=`${d.date},${d.vehicleType},${d.vehicleNumber},${d.driver},${d.morningStart}-${d.morningEnd},${d.afternoonStart}-${d.afternoonEnd},${d.diesel},${d.engage},${d.description}\n`;
+  });
+  let blob=new Blob([csv],{type:"text/csv"});
+  let url=URL.createObjectURL(blob);
+  let a=document.createElement("a"); a.href=url; a.download="report.csv"; a.click();
+}
 
-    // CSV Export
-    window.exportCSV = function() {
-      let rows = document.querySelectorAll("#reportTable tr");
-      let csv = [];
-      rows.forEach(r => {
-        let cols = r.querySelectorAll("td,th");
-        let arr = [];
-        cols.forEach(c => arr.push(c.innerText));
-        csv.push(arr.join(","));
-      });
-      let blob = new Blob([csv.join("\n")], { type:"text/csv" });
-      let link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "report.csv";
-      link.click();
-    }
+// Export PDF (Reports)
+function exportPDF(){
+  let { jsPDF } = window.jspdf;
+  let doc = new jsPDF();
+  doc.text("VK INFRASTRUCTURE - Reports", 14, 15);
+  doc.autoTable({ html: '#reportTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
+  doc.save("Reports.pdf");
+}
 
-    // Print Report
-    window.printReport = function() {
-      let w = window.open("");
-      w.document.write(document.getElementById("reportTable").outerHTML);
-      w.print();
-    }
+// Export PDF (Overall)
+function exportOverallPDF(){
+  let { jsPDF } = window.jspdf;
+  let doc = new jsPDF();
+  doc.text("VK INFRASTRUCTURE - Overall Report", 14, 15);
+  doc.autoTable({ html: '#overallTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
+  doc.save("Overall_Report.pdf");
+}
 
-    // Export PDF
-    window.exportPDF = function() { printReport(); }
+// ---- Hours Calculation ----
+function calcMinutes(start,end){
+  if(!start||!end) return 0;
+  let s=start.split(":"), e=end.split(":");
+  return (parseInt(e[0])*60+parseInt(e[1]))-(parseInt(s[0])*60+parseInt(s[1]));
+}
 
-    // Overall Report
-    window.generateOverallReport = async function() {
-      let from = document.getElementById("fromDate").value;
-      let to = document.getElementById("toDate").value;
-      let tbody = document.querySelector("#overallTable tbody");
-      tbody.innerHTML = "";
+function loadOverall(){
+  let from=new Date(document.getElementById("fromDate").value);
+  let to=new Date(document.getElementById("toDate").value);
+  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+  let tbody=document.querySelector("#overallTable tbody"); 
+  tbody.innerHTML="";
+  
+  let summary={};
+  logs.forEach(d=>{
+    let dt=new Date(d.date);
+    if((!isNaN(from)&&dt<from)||(!isNaN(to)&&dt>to)) return;
+    let key=d.driver+"_"+d.vehicleNumber;
+    if(!summary[key]) summary[key]={driver:d.driver, type:d.vehicleType, num:d.vehicleNumber, mins:0, days:0, diesel:0};
+    summary[key].days++;
+    summary[key].diesel+=Number(d.diesel||0);
+    summary[key].mins+=calcMinutes(d.morningStart,d.morningEnd)+calcMinutes(d.afternoonStart,d.afternoonEnd);
+  });
 
-      const snapshot = await getDocs(collection(db, "logs"));
-      let summary = {};
+  Object.values(summary).forEach(s=>{
+    let h=Math.floor(s.mins/60);
+    let m=s.mins%60;
+    tbody.innerHTML+=`<tr>
+      <td>${s.driver}</td>
+      <td>${s.type}</td>
+      <td>${s.num}</td>
+      <td>${h}h ${m}m</td>
+      <td>${s.days}</td>
+      <td>${s.diesel}</td>
+    </tr>`;
+  });
+}
 
-      snapshot.forEach(docSnap => {
-        let d = docSnap.data();
-        if((!from || d.date >= from) && (!to || d.date <= to)) {
-          let key = d.driver + "-" + d.vehicleNumber;
-          if(!summary[key]) {
-            summary[key] = { driver:d.driver, vehicle:d.vehicleType, number:d.vehicleNumber, days:0, hours:0, diesel:0 };
-          }
-          summary[key].days++;
-          summary[key].diesel += Number(d.diesel) || 0;
+// ---- PASSWORD CHANGE ----
+function changeAdminPassword(){
+  let oldp=document.getElementById("oldAdminPass").value;
+  let newp=document.getElementById("newAdminPass").value;
+  if(oldp===localStorage.getItem("adminPass")){
+    if(newp){ localStorage.setItem("adminPass",newp); alert("✅ Admin password changed!"); backToDashboard(); }
+    else alert("Enter new password");
+  } else alert("❌ Old password incorrect");
+}
 
-          function diff(t1,t2){ if(!t1||!t2) return 0; 
-            let a=new Date("1970-01-01T"+t1+":00"), b=new Date("1970-01-01T"+t2+":00");
-            return (b-a)/3600000; }
-          summary[key].hours += diff(d.morningStart,d.morningEnd)+diff(d.afternoonStart,d.afternoonEnd);
-        }
-      });
-
-      for(let k in summary){
-        let s=summary[k];
-        tbody.innerHTML += `<tr>
-          <td>${s.driver}</td><td>${s.vehicle}</td><td>${s.number}</td>
-          <td>${s.days}</td><td>${s.hours.toFixed(2)}</td><td>${s.diesel}</td>
-        </tr>`;
-      }
-      showPage("overallReport");
-    }
-  </script>
-
-  <script>
-    let correctId="VK INFRA", defaultPass="Rajesh@1234";
-    if(!localStorage.getItem("password")) localStorage.setItem("password",defaultPass);
-
-    function login(){
-      let id=document.getElementById("loginId").value;
-      let pass=document.getElementById("loginPass").value;
-      if(id===correctId && pass===localStorage.getItem("password")){
-        showPage("dashboard");
-      } else alert("❌ Invalid ID/Password");
-    }
-    function logout(){ showPage("loginPage"); }
-    function openPage(p){ showPage(p); }
-    function backToDashboard(){ showPage("dashboard"); }
-    function showPage(p){ document.querySelectorAll(".page").forEach(pg=>pg.classList.remove("active")); document.getElementById(p).classList.add("active"); }
-
-    function changePassword(){
-      let old=document.getElementById("oldPass").value;
-      let newp=document.getElementById("newPass").value;
-      if(old===localStorage.getItem("password") && newp){
-        localStorage.setItem("password",newp);
-        alert("✅ Password changed!");
-        backToDashboard();
-      } else alert("❌ Wrong old password or empty new password");
-    }
-  </script>
+function changeViewerPassword(){
+  let oldp=document.getElementById("oldViewerPass").value;
+  let newp=document.getElementById("newViewerPass").value;
+  if(oldp===localStorage.getItem("viewerPass")){
+    if(newp){ localStorage.setItem("viewerPass",newp); alert("✅ Viewer password changed!"); backToDashboard(); }
+    else alert("Enter new password");
+  } else alert("❌ Old password incorrect");
+}
+</script>
 </body>
 </html>
