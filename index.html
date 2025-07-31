@@ -320,7 +320,7 @@ function changeViewerPassword(){
   let oldp=document.getElementById("oldViewerPass").value;
   let newp=document.getElementById("newViewerPass").value;
   if(oldp===localStorage.getItem("viewerPass")){
-    if(newp){ localStorage.setItem("viewerPass",newp); alert("✅ Viewer password changed!"); backToDashboard(); }
+   if(newp){ localStorage.setItem("viewerPass",newp); alert("✅ Viewer password changed!"); backToDashboard(); }
     else alert("Enter new password");
   } else alert("❌ Old password incorrect");
 }
