@@ -136,194 +136,204 @@
   </div>
 </div>
 
-<script>
-let userRole="";
-if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","Rajesh@1234");
-if(!localStorage.getItem("viewerPass")) localStorage.setItem("viewerPass","Viewer");
+<!-- ✅ Firebase Integration -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc } 
+    from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-// Page control
-function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function openPage(id){ showPage(id); }
-function backToDashboard(){ showPage("dashboard"); }
-
-// ---- LOGIN ----
-function login(){
-  let id=document.getElementById("loginId").value.trim();
-  let pass=document.getElementById("loginPass").value.trim();
-  let adminPass=localStorage.getItem("adminPass");
-  let viewerPass=localStorage.getItem("viewerPass");
-
-  if(id==="VK INFRA" && pass===adminPass){
-    userRole="admin"; showPage("dashboard"); setupDashboard();
-  }
-  else if(id==="VK INFRA" && pass===viewerPass){
-    userRole="viewer"; showPage("dashboard"); setupDashboard();
-  }
-  else { alert("❌ Invalid ID or Password"); }
-}
-
-// Dashboard setup
-function setupDashboard(){
-  document.getElementById("dataEntryBtn").style.display = userRole==="admin"?"block":"none";
-  document.getElementById("adminPassBtn").style.display = userRole==="admin"?"block":"none";
-  document.getElementById("viewerPassBtn").style.display = userRole==="admin"?"block":"none";
-}
-
-// Logout
-function logout(){ userRole=""; showPage("loginPage"); }
-
-// Save data (with edit support)
-function saveData(){
-  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
-  let idx=document.getElementById("editIndex").value;
-
-  let data={
-    date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value,
-    driver:driver.value, morningStart:morningStart.value, morningEnd:morningEnd.value,
-    afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
-    diesel:diesel.value, engage:engage.value, description:description.value
+  // ✅ Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEoXnmRndIWlXgEExOsqscSGqhgy8IqVI",
+    authDomain: "vk-infra.firebaseapp.com",
+    projectId: "vk-infra",
+    storageBucket: "vk-infra.firebasestorage.app",
+    messagingSenderId: "8449193426",
+    appId: "1:8449193426:web:bbd5d1139e045fbcf7c40b",
+    measurementId: "G-QHNWWT8CZP"
   };
 
-  if(idx!==""){   // edit existing
-    logs[idx]=data;
-    document.getElementById("editIndex").value="";
-    alert("✏️ Entry Updated!");
-  } else {        // new entry
-    logs.push(data);
-    alert("✅ Data Saved!");
+  // ✅ Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // ---- GLOBAL VARIABLES ----
+  let userRole="";
+  if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","Rajesh@1234");
+  if(!localStorage.getItem("viewerPass")) localStorage.setItem("viewerPass","Viewer");
+
+  // ---- PAGE CONTROL ----
+  window.showPage=function(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+  window.openPage=function(id){ showPage(id); }
+  window.backToDashboard=function(){ showPage("dashboard"); }
+  window.logout=function(){ userRole=""; showPage("loginPage"); }
+
+  // ---- LOGIN ----
+  window.login=function(){
+    let id=document.getElementById("loginId").value.trim();
+    let pass=document.getElementById("loginPass").value.trim();
+    let adminPass=localStorage.getItem("adminPass");
+    let viewerPass=localStorage.getItem("viewerPass");
+
+    if(id==="VK INFRA" && pass===adminPass){
+      userRole="admin"; showPage("dashboard"); setupDashboard();
+    }
+    else if(id==="VK INFRA" && pass===viewerPass){
+      userRole="viewer"; showPage("dashboard"); setupDashboard();
+    }
+    else { alert("❌ Invalid ID or Password"); }
   }
 
-  localStorage.setItem("logs",JSON.stringify(logs));
-  backToDashboard();
-}
+  function setupDashboard(){
+    document.getElementById("dataEntryBtn").style.display = userRole==="admin"?"block":"none";
+    document.getElementById("adminPassBtn").style.display = userRole==="admin"?"block":"none";
+    document.getElementById("viewerPassBtn").style.display = userRole==="admin"?"block":"none";
+  }
 
-// Load reports
-function loadReports(){
-  showPage("reports");
-  let date=document.getElementById("reportDate").value;
-  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
-  let tbody=document.querySelector("#reportTable tbody"); tbody.innerHTML="";
-  logs.filter(d=>!date || d.date===date).forEach((d,i)=>{
-    let actions="";
-    if(userRole==="admin"){
-      actions+=`<button onclick="editEntry(${i})">✏️</button>`;
-      actions+=`<button onclick="deleteEntry(${i})">🗑️</button>`;
+  // ---- SAVE DATA ----
+  window.saveData = async function(){
+    let idx=document.getElementById("editIndex").value;
+    let data={
+      date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value,
+      driver:driver.value, morningStart:morningStart.value, morningEnd:morningEnd.value,
+      afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
+      diesel:diesel.value, engage:engage.value, description:description.value
+    };
+
+    if(idx){ 
+      await updateDoc(doc(db,"logs",idx),data);
+      alert("✏️ Entry Updated!");
+      document.getElementById("editIndex").value="";
+    } else {
+      await addDoc(collection(db,"logs"),data);
+      alert("✅ Data Saved!");
     }
-    tbody.innerHTML+=`<tr>
-      <td>${d.date}</td><td>${d.vehicleType}</td><td>${d.vehicleNumber}</td><td>${d.driver}</td>
-      <td>${d.morningStart}-${d.morningEnd}</td><td>${d.afternoonStart}-${d.afternoonEnd}</td>
-      <td>${d.diesel}</td><td>${d.engage}</td><td>${d.description}</td><td>${actions}</td>
-    </tr>`;
-  });
-}
+    backToDashboard();
+  }
 
-// Edit entry
-function editEntry(i){
-  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
-  let d=logs[i];
-  document.getElementById("editIndex").value=i;
-  date.value=d.date; vehicleType.value=d.vehicleType; vehicleNumber.value=d.vehicleNumber;
-  driver.value=d.driver; morningStart.value=d.morningStart; morningEnd.value=d.morningEnd;
-  afternoonStart.value=d.afternoonStart; afternoonEnd.value=d.afternoonEnd;
-  diesel.value=d.diesel; engage.value=d.engage; description.value=d.description;
-  showPage("dataEntry");
-}
+  // ---- LOAD REPORTS ----
+  window.loadReports = async function(){
+    showPage("reports");
+    let dateVal=document.getElementById("reportDate").value;
+    let tbody=document.querySelector("#reportTable tbody"); tbody.innerHTML="";
+    
+    let q = dateVal ? query(collection(db,"logs"), where("date","==",dateVal)) : collection(db,"logs");
+    let snap=await getDocs(q);
 
-// Delete
-function deleteEntry(i){
-  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
-  logs.splice(i,1);
-  localStorage.setItem("logs",JSON.stringify(logs));
-  loadReports();
-}
+    snap.forEach((docSnap)=>{
+      let d=docSnap.data();
+      let id=docSnap.id;
+      let actions="";
+      if(userRole==="admin"){
+        actions+=`<button onclick="editEntry('${id}')">✏️</button>`;
+        actions+=`<button onclick="deleteEntry('${id}')">🗑️</button>`;
+      }
+      tbody.innerHTML+=`<tr>
+        <td>${d.date}</td><td>${d.vehicleType}</td><td>${d.vehicleNumber}</td><td>${d.driver}</td>
+        <td>${d.morningStart}-${d.morningEnd}</td><td>${d.afternoonStart}-${d.afternoonEnd}</td>
+        <td>${d.diesel}</td><td>${d.engage}</td><td>${d.description}</td><td>${actions}</td>
+      </tr>`;
+    });
+  }
 
-// Export CSV
-function exportCSV(){
-  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
-  let csv="Date,Vehicle Type,Vehicle No,Driver,Morning,Afternoon,Diesel,Engage,Description\n";
-  logs.forEach(d=>{
-    csv+=`${d.date},${d.vehicleType},${d.vehicleNumber},${d.driver},${d.morningStart}-${d.morningEnd},${d.afternoonStart}-${d.afternoonEnd},${d.diesel},${d.engage},${d.description}\n`;
-  });
-  let blob=new Blob([csv],{type:"text/csv"});
-  let url=URL.createObjectURL(blob);
-  let a=document.createElement("a"); a.href=url; a.download="report.csv"; a.click();
-}
+  // ---- EDIT ----
+  window.editEntry = async function(id){
+    let snap=await getDocs(query(collection(db,"logs"),where("__name__","==",id)));
+    let d=snap.docs[0].data();
+    document.getElementById("editIndex").value=id;
+    date.value=d.date; vehicleType.value=d.vehicleType; vehicleNumber.value=d.vehicleNumber;
+    driver.value=d.driver; morningStart.value=d.morningStart; morningEnd.value=d.morningEnd;
+    afternoonStart.value=d.afternoonStart; afternoonEnd.value=d.afternoonEnd;
+    diesel.value=d.diesel; engage.value=d.engage; description.value=d.description;
+    showPage("dataEntry");
+  }
 
-// Export PDF (Reports)
-function exportPDF(){
-  let { jsPDF } = window.jspdf;
-  let doc = new jsPDF();
-  doc.text("VK INFRASTRUCTURE - Reports", 14, 15);
-  doc.autoTable({ html: '#reportTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
-  doc.save("Reports.pdf");
-}
+  // ---- DELETE ----
+  window.deleteEntry = async function(id){
+    await deleteDoc(doc(db,"logs",id));
+    alert("🗑️ Deleted!");
+    loadReports();
+  }
 
-// Export PDF (Overall)
-function exportOverallPDF(){
-  let { jsPDF } = window.jspdf;
-  let doc = new jsPDF();
-  doc.text("VK INFRASTRUCTURE - Overall Report", 14, 15);
-  doc.autoTable({ html: '#overallTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
-  doc.save("Overall_Report.pdf");
-}
+  // ---- CSV EXPORT ----
+  window.exportCSV=function(){
+    alert("⚠️ CSV export Firebase integration inka complete cheyyali.\nPresent localStorage kosam rasina code use cheyyaledu.");
+  }
 
-// ---- Hours Calculation ----
-function calcMinutes(start,end){
-  if(!start||!end) return 0;
-  let s=start.split(":"), e=end.split(":");
-  return (parseInt(e[0])*60+parseInt(e[1]))-(parseInt(s[0])*60+parseInt(s[1]));
-}
+  // ---- PDF EXPORT (Reports) ----
+  window.exportPDF=function(){
+    let { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+    doc.text("VK INFRASTRUCTURE - Reports", 14, 15);
+    doc.autoTable({ html: '#reportTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
+    doc.save("Reports.pdf");
+  }
 
-function loadOverall(){
-  let from=new Date(document.getElementById("fromDate").value);
-  let to=new Date(document.getElementById("toDate").value);
-  let logs=JSON.parse(localStorage.getItem("logs")||"[]");
-  let tbody=document.querySelector("#overallTable tbody"); 
-  tbody.innerHTML="";
-  
-  let summary={};
-  logs.forEach(d=>{
-    let dt=new Date(d.date);
-    if((!isNaN(from)&&dt<from)||(!isNaN(to)&&dt>to)) return;
-    let key=d.driver+"_"+d.vehicleNumber;
-    if(!summary[key]) summary[key]={driver:d.driver, type:d.vehicleType, num:d.vehicleNumber, mins:0, days:0, diesel:0};
-    summary[key].days++;
-    summary[key].diesel+=Number(d.diesel||0);
-    summary[key].mins+=calcMinutes(d.morningStart,d.morningEnd)+calcMinutes(d.afternoonStart,d.afternoonEnd);
-  });
+  // ---- PDF EXPORT (Overall) ----
+  window.exportOverallPDF=function(){
+    let { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+    doc.text("VK INFRASTRUCTURE - Overall Report", 14, 15);
+    doc.autoTable({ html: '#overallTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
+    doc.save("Overall_Report.pdf");
+  }
 
-  Object.values(summary).forEach(s=>{
-    let h=Math.floor(s.mins/60);
-    let m=s.mins%60;
-    tbody.innerHTML+=`<tr>
-      <td>${s.driver}</td>
-      <td>${s.type}</td>
-      <td>${s.num}</td>
-      <td>${h}h ${m}m</td>
-      <td>${s.days}</td>
-      <td>${s.diesel}</td>
-    </tr>`;
-  });
-}
+  // ---- TIME CALC ----
+  function calcMinutes(start,end){
+    if(!start||!end) return 0;
+    let s=start.split(":"), e=end.split(":");
+    return (parseInt(e[0])*60+parseInt(e[1]))-(parseInt(s[0])*60+parseInt(s[1]));
+  }
 
-// ---- PASSWORD CHANGE ----
-function changeAdminPassword(){
-  let oldp=document.getElementById("oldAdminPass").value;
-  let newp=document.getElementById("newAdminPass").value;
-  if(oldp===localStorage.getItem("adminPass")){
-    if(newp){ localStorage.setItem("adminPass",newp); alert("✅ Admin password changed!"); backToDashboard(); }
-    else alert("Enter new password");
-  } else alert("❌ Old password incorrect");
-}
+  // ---- OVERALL REPORT ----
+  window.loadOverall = async function(){
+    let from=new Date(document.getElementById("fromDate").value);
+    let to=new Date(document.getElementById("toDate").value);
+    let tbody=document.querySelector("#overallTable tbody"); 
+    tbody.innerHTML="";
+    
+    let snap=await getDocs(collection(db,"logs"));
+    let summary={};
+    snap.forEach(docSnap=>{
+      let d=docSnap.data();
+      let dt=new Date(d.date);
+      if((!isNaN(from)&&dt<from)||(!isNaN(to)&&dt>to)) return;
+      let key=d.driver+"_"+d.vehicleNumber;
+      if(!summary[key]) summary[key]={driver:d.driver, type:d.vehicleType, num:d.vehicleNumber, mins:0, days:0, diesel:0};
+      summary[key].days++;
+      summary[key].diesel+=Number(d.diesel||0);
+      summary[key].mins+=calcMinutes(d.morningStart,d.morningEnd)+calcMinutes(d.afternoonStart,d.afternoonEnd);
+    });
 
-function changeViewerPassword(){
-  let oldp=document.getElementById("oldViewerPass").value;
-  let newp=document.getElementById("newViewerPass").value;
-  if(oldp===localStorage.getItem("viewerPass")){
-   if(newp){ localStorage.setItem("viewerPass",newp); alert("✅ Viewer password changed!"); backToDashboard(); }
-    else alert("Enter new password");
-  } else alert("❌ Old password incorrect");
-}
+    Object.values(summary).forEach(s=>{
+      let h=Math.floor(s.mins/60);
+      let m=s.mins%60;
+      tbody.innerHTML+=`<tr>
+        <td>${s.driver}</td><td>${s.type}</td><td>${s.num}</td>
+        <td>${h}h ${m}m</td><td>${s.days}</td><td>${s.diesel}</td>
+      </tr>`;
+    });
+  }
+
+  // ---- PASSWORD CHANGE ----
+  window.changeAdminPassword=function(){
+    let oldp=document.getElementById("oldAdminPass").value;
+    let newp=document.getElementById("newAdminPass").value;
+    if(oldp===localStorage.getItem("adminPass")){
+      if(newp){ localStorage.setItem("adminPass",newp); alert("✅ Admin password changed!"); backToDashboard(); }
+      else alert("Enter new password");
+    } else alert("❌ Old password incorrect");
+  }
+
+  window.changeViewerPassword=function(){
+    let oldp=document.getElementById("oldViewerPass").value;
+    let newp=document.getElementById("newViewerPass").value;
+    if(oldp===localStorage.getItem("viewerPass")){
+      if(newp){ localStorage.setItem("viewerPass",newp); alert("✅ Viewer password changed!"); backToDashboard(); }
+      else alert("Enter new password");
+    } else alert("❌ Old password incorrect");
+  }
+
 </script>
 </body>
 </html>
