@@ -69,6 +69,14 @@
   <div id="reports" class="page">
     <div class="container">
       <h3>Reports</h3>
+
+      <!-- 🔍 Date Filter -->
+      <label>From Date</label>
+      <input type="date" id="reportFrom">
+      <label>To Date</label>
+      <input type="date" id="reportTo">
+      <button onclick="loadReports()">🔍 Filter</button>
+
       <table id="reportTable">
         <thead>
           <tr>
@@ -155,13 +163,21 @@
       backToDashboard();
     });
 
-    // Load Reports
+    // Load Reports with date filter
     window.loadReports = async function() {
       let tbody = document.querySelector("#reportTable tbody");
       tbody.innerHTML = "";
+
+      let from = document.getElementById("reportFrom")?.value || "";
+      let to = document.getElementById("reportTo")?.value || "";
+
       const snapshot = await getDocs(collection(db, "logs"));
       snapshot.forEach(snap => {
         let d = snap.data();
+
+        // Date Filter
+        if ((from && d.date < from) || (to && d.date > to)) return;
+
         tbody.innerHTML += `<tr>
           <td>${d.date}</td>
           <td>${d.vehicleType}</td>
