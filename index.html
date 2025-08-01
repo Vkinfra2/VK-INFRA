@@ -17,6 +17,7 @@
     th { background:#2a3248; color:white; }
     .actions button { width:auto; margin:2px; padding:4px 8px; font-size:12px; }
   </style>
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -84,6 +85,7 @@
       </thead>
       <tbody></tbody>
     </table>
+    <button onclick="exportCSV()">⬇️ CSV</button>
     <button onclick="exportPDF()">📄 PDF</button>
     <button onclick="window.print()">🖨️ Print</button>
     <button onclick="backToDashboard()">🔙 Back</button>
@@ -101,7 +103,7 @@
       <thead>
         <tr>
           <th>Driver</th><th>Vehicle Type</th><th>Vehicle No</th>
-          <th>Total Hours</th><th>Total Days</th><th>Total Diesel</th>
+          <th>Total Hours</th><th>Full Days</th><th>Half Days</th><th>Total Diesel</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -112,7 +114,7 @@
   </div>
 </div>
 
-<!-- 🔑 Change Password Pages -->
+<!-- 🔑 Change Admin Password -->
 <div id="changeAdminPassword" class="page">
   <div class="container">
     <h3>Change Admin Password</h3>
@@ -123,6 +125,7 @@
   </div>
 </div>
 
+<!-- 🔑 Change Viewer Password -->
 <div id="changeViewerPassword" class="page">
   <div class="container">
     <h3>Change Viewer Password</h3>
@@ -139,6 +142,7 @@
   import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc } 
     from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
+  // ✅ Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyDEoXnmRndIWlXgEExOsqscSGqhgy8IqVI",
     authDomain: "vk-infra.firebaseapp.com",
@@ -149,31 +153,21 @@
     measurementId: "G-QHNWWT8CZP"
   };
 
+  // ✅ Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  // ---- GLOBAL VARIABLES ----
   let userRole="";
   if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","Rajesh@1234");
   if(!localStorage.getItem("viewerPass")) localStorage.setItem("viewerPass","Viewer");
 
   // ---- PAGE CONTROL ----
-  window.showPage=function(id){ 
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); 
-    document.getElementById(id).classList.add('active'); 
-  }
-
+  window.showPage=function(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
   window.openPage=function(id){ 
+    if(id==="dataEntry"){ clearDataEntry(); }
     showPage(id); 
-    if(id==="dataEntry"){  
-      if(!document.getElementById("editIndex").value){  
-        document.querySelectorAll("#dataEntry input, #dataEntry textarea, #dataEntry select")
-          .forEach(el=>{
-            if(el.type!=="button" && el.type!=="hidden") el.value="";
-          });
-      }
-    }
   }
-
   window.backToDashboard=function(){ showPage("dashboard"); }
   window.logout=function(){ userRole=""; showPage("loginPage"); }
 
@@ -197,6 +191,14 @@
     document.getElementById("dataEntryBtn").style.display = userRole==="admin"?"block":"none";
     document.getElementById("adminPassBtn").style.display = userRole==="admin"?"block":"none";
     document.getElementById("viewerPassBtn").style.display = userRole==="admin"?"block":"none";
+  }
+
+  // ---- CLEAR DATA ENTRY ----
+  function clearDataEntry(){
+    document.getElementById("editIndex").value="";
+    date.value=""; vehicleType.value=""; vehicleNumber.value=""; driver.value="";
+    morningStart.value=""; morningEnd.value=""; afternoonStart.value=""; afternoonEnd.value="";
+    diesel.value=""; engage.value="Full Day"; description.value="";
   }
 
   // ---- SAVE DATA ----
@@ -264,7 +266,7 @@
     loadReports();
   }
 
-  // ---- PDF EXPORT ----
+  // ---- PDF EXPORT (Reports) ----
   window.exportPDF=function(){
     let { jsPDF } = window.jspdf;
     let doc = new jsPDF();
@@ -273,6 +275,7 @@
     doc.save("Reports.pdf");
   }
 
+  // ---- PDF EXPORT (Overall) ----
   window.exportOverallPDF=function(){
     let { jsPDF } = window.jspdf;
     let doc = new jsPDF();
@@ -302,8 +305,11 @@
       let dt=new Date(d.date);
       if((!isNaN(from)&&dt<from)||(!isNaN(to)&&dt>to)) return;
       let key=d.driver+"_"+d.vehicleNumber;
-      if(!summary[key]) summary[key]={driver:d.driver, type:d.vehicleType, num:d.vehicleNumber, mins:0, days:0, diesel:0};
-      summary[key].days++;
+      if(!summary[key]) summary[key]={driver:d.driver, type:d.vehicleType, num:d.vehicleNumber, mins:0, fullDays:0, halfDays:0, diesel:0};
+      
+      if(d.engage==="Full Day") summary[key].fullDays++;
+      else if(d.engage==="Half Day") summary[key].halfDays++;
+
       summary[key].diesel+=Number(d.diesel||0);
       summary[key].mins+=calcMinutes(d.morningStart,d.morningEnd)+calcMinutes(d.afternoonStart,d.afternoonEnd);
     });
@@ -313,7 +319,10 @@
       let m=s.mins%60;
       tbody.innerHTML+=`<tr>
         <td>${s.driver}</td><td>${s.type}</td><td>${s.num}</td>
-        <td>${h}h ${m}m</td><td>${s.days}</td><td>${s.diesel}</td>
+        <td>${h}h ${m}m</td>
+        <td>${s.fullDays}</td>
+        <td>${s.halfDays}</td>
+        <td>${s.diesel}</td>
       </tr>`;
     });
   }
