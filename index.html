@@ -160,7 +160,6 @@
   </div>
 </div>
 
-<!-- ✅ Firebase + JS -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc, orderBy } 
@@ -215,7 +214,7 @@ window.saveData=async function(){
     date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value, driver:driver.value,
     morningStart:morningStart.value, morningEnd:morningEnd.value, 
     afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
-    diesel:diesel.value, engage:engage.value, description:description.value
+    diesel:+diesel.value||0, engage:engage.value, description:description.value
   };
   if(editIndex.value){ await updateDoc(doc(db,"logs",editIndex.value),data); alert("✅ Updated!"); }
   else{ await addDoc(collection(db,"logs"),data); alert("✅ Saved!"); }
@@ -290,13 +289,25 @@ window.loadFuelReport=async function(){
     entries.push({id,...d,total:t}); total+=+d.liters; amount+=t;
   });
 
-  // Used fuel from logs
-  let used=0; let logSnap=await getDocs(collection(db,"logs")); logSnap.forEach(ds=>used+=+ds.data().diesel||0);
+  if(entries.length===0) return;
 
-  // Old stock = previous balance before last fuel entry
+  // Used fuel only after last entry
   let lastEntry=entries[entries.length-1];
+  let lastDate=new Date(lastEntry.date);
+
+  let used=0; 
+  let logSnap=await getDocs(collection(db,"logs")); 
+  logSnap.forEach(ds=>{
+    let d=ds.data(); if(new Date(d.date)>=lastDate) used+=+d.diesel||0;
+  });
+
+  // Old stock = (all previous fuel - used till last entry)
   let prevLiters=total-(lastEntry?.liters||0);
-  let oldStock=prevLiters-used;
+  let prevUsed=0;
+  logSnap.forEach(ds=>{
+    let d=ds.data(); if(new Date(d.date)<lastDate) prevUsed+=+d.diesel||0;
+  });
+  let oldStock=prevLiters-prevUsed;
 
   // Fill table
   entries.forEach(d=>{
@@ -306,17 +317,18 @@ window.loadFuelReport=async function(){
   });
 
   // Present Fuel
-  let remaining=total-used;
+  let remaining=(oldStock+lastEntry.liters)-used;
   document.getElementById("fuelLimit").innerText=lastEntry?.liters||0;
   document.getElementById("oldStock").innerText=oldStock<0?0:oldStock;
   document.getElementById("usedFuel").innerText=used;
-  document.getElementById("remainingFuel").innerText=remaining;
+  document.getElementById("remainingFuel").innerText=remaining<0?0:remaining;
   document.getElementById("presentAmount").innerText=(lastEntry?.liters||0)*(lastEntry?.price||0);
 
   // Overall Fuel
+  let allUsed=0; logSnap.forEach(ds=>allUsed+=+ds.data().diesel||0);
   document.getElementById("overallFuel").innerText=total;
-  document.getElementById("usedOverall").innerText=used;
-  document.getElementById("remainingOverall").innerText=remaining;
+  document.getElementById("usedOverall").innerText=allUsed;
+  document.getElementById("remainingOverall").innerText=total-allUsed;
   document.getElementById("overallAmount").innerText=amount;
 }
 
@@ -338,7 +350,6 @@ window.changeViewerPassword=function(){
     localStorage.setItem("viewerPass",newViewerPass.value); alert("Viewer password changed!"); backToDashboard(); 
   } else alert("Wrong Viewer Password"); 
 }
-
 </script>
 </body>
 </html>
