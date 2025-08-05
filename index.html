@@ -81,11 +81,8 @@
     <input type="date" id="reportDate">
     <button onclick="loadReports()">🔍 Search</button>
     <table id="reportTable"><thead>
-      <tr>
-        <th>Date</th><th>Vehicle Type</th><th>Number</th><th>Driver</th>
-        <th>Morning</th><th>Afternoon</th><th>Diesel</th><th>Engage</th>
-        <th>Desc</th><th>Actions</th>
-      </tr>
+      <tr><th>Date</th><th>Vehicle Type</th><th>Number</th><th>Driver</th>
+      <th>Morning</th><th>Afternoon</th><th>Diesel</th><th>Engage</th><th>Desc</th><th>Actions</th></tr>
     </thead><tbody></tbody></table>
     <button onclick="window.print()">🖨️ Print</button>
     <button onclick="backToDashboard()">🔙 Back</button>
@@ -100,8 +97,7 @@
     <label>To</label><input type="date" id="toDate">
     <button onclick="loadOverall()">🔍 Generate</button>
     <table id="overallTable"><thead>
-      <tr><th>Driver</th><th>Vehicle Type</th><th>No</th><th>Total Hrs</th>
-          <th>Full Days</th><th>Half Days</th><th>No Duty</th><th>Diesel</th></tr>
+      <tr><th>Driver</th><th>Vehicle Type</th><th>No</th><th>Total Hrs</th><th>Full</th><th>Half</th><th>No Duty</th><th>Diesel</th></tr>
     </thead><tbody></tbody></table>
     <button onclick="window.print()">🖨️ Print</button>
     <button onclick="backToDashboard()">🔙 Back</button>
@@ -128,23 +124,21 @@
     <div class="flex">
       <div class="box">
         <h4>Present Fuel Report</h4>
-        <p>Fuel Limit: <span id="fuelLimit">0</span> L</p>
-        <p>Old Stock: <span id="oldStock">0</span> L</p>
-        <p>Used Fuel: <span id="usedFuel">0</span> L</p>
-        <p>Remaining Fuel: <span id="remainingFuel">0</span> L</p>
+        <p>Fuel Limit: <span id="fuelLimit">0</span></p>
+        <p>Old Stock: <span id="oldStock">0</span></p>
+        <p>Used Fuel: <span id="usedFuel">0</span></p>
+        <p>Remaining Fuel: <span id="remainingFuel">0</span></p>
         <p>Total Amount: ₹<span id="presentAmount">0</span></p>
       </div>
       <div class="box">
         <h4>Overall Fuel Report</h4>
-        <p>Total Received: <span id="overallFuel">0</span> L</p>
+        <p>Overall Fuel: <span id="overallFuel">0</span></p>
+        <p>Used Overall: <span id="usedOverall">0</span></p>
+        <p>Remaining Overall: <span id="remainingOverall">0</span></p>
         <p>Total Amount: ₹<span id="overallAmount">0</span></p>
-        <p>Used Overall: <span id="usedOverall">0</span> L</p>
-        <p>Remaining Overall: <span id="remainingOverall">0</span> L</p>
       </div>
     </div>
-    <table id="fuelTable"><thead>
-      <tr><th>Date</th><th>Liters</th><th>Price/Ltr</th><th>Total</th><th>Actions</th></tr>
-    </thead><tbody></tbody></table>
+    <table id="fuelTable"><thead><tr><th>Date</th><th>Liters</th><th>Price</th><th>Total</th><th>Actions</th></tr></thead><tbody></tbody></table>
     <button onclick="window.print()">🖨️ Print</button>
     <button onclick="backToDashboard()">🔙 Back</button>
   </div>
@@ -169,9 +163,8 @@
 <!-- ✅ Firebase + JS -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { 
-  getFirestore, collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc, orderBy 
-} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc, orderBy } 
+  from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDEoXnmRndIWlXgEExOsqscSGqhgy8IqVI",
@@ -189,10 +182,7 @@ let userRole="";
 if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","Noteultra");
 if(!localStorage.getItem("viewerPass")) localStorage.setItem("viewerPass","Viewer");
 
-function showPage(id){ 
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); 
-  document.getElementById(id).classList.add('active'); 
-}
+function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 window.openPage=id=>showPage(id);
 window.backToDashboard=()=>showPage("dashboard");
 window.logout=()=>{ userRole=""; showPage("loginPage"); }
@@ -221,12 +211,9 @@ function clearForm(){
 
 // ---- SAVE DATA ----
 window.saveData=async function(){
-  let data={
-    date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value, driver:driver.value,
-    morningStart:morningStart.value, morningEnd:morningEnd.value, 
-    afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
-    diesel:diesel.value, engage:engage.value, description:description.value
-  };
+  let data={date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value, driver:driver.value,
+    morningStart:morningStart.value, morningEnd:morningEnd.value, afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
+    diesel:diesel.value, engage:engage.value, description:description.value};
   if(editIndex.value){ await updateDoc(doc(db,"logs",editIndex.value),data); alert("✅ Updated!"); }
   else{ await addDoc(collection(db,"logs"),data); alert("✅ Saved!"); }
   clearForm(); backToDashboard();
@@ -237,23 +224,19 @@ window.loadReports=async function(){
   showPage("reports");
   let dateVal=reportDate.value;
   let tbody=document.querySelector("#reportTable tbody"); tbody.innerHTML="";
-  let q=dateVal?query(collection(db,"logs"),where("date","==",dateVal)):collection(db,"logs");
+  let q=dateVal?query(collection(db,"logs"),where("date","==",dateVal),orderBy("date","asc")):query(collection(db,"logs"),orderBy("date","asc"));
   let snap=await getDocs(q);
   snap.forEach(docSnap=>{
     let d=docSnap.data(), id=docSnap.id;
     let actions="";
     if(userRole==="admin"){ actions+=`<button onclick="editEntry('${id}')">✏️</button><button onclick="deleteEntry('${id}')">🗑️</button>`; }
-    tbody.innerHTML+=`<tr>
-      <td>${d.date}</td><td>${d.vehicleType}</td><td>${d.vehicleNumber}</td>
-      <td>${d.driver}</td><td>${d.morningStart}-${d.morningEnd}</td>
-      <td>${d.afternoonStart}-${d.afternoonEnd}</td>
-      <td>${d.diesel}</td><td>${d.engage}</td>
-      <td>${d.description}</td><td>${actions}</td>
-    </tr>`;
+    tbody.innerHTML+=`<tr><td>${d.date}</td><td>${d.vehicleType}</td><td>${d.vehicleNumber}</td>
+    <td>${d.driver}</td><td>${d.morningStart}-${d.morningEnd}</td><td>${d.afternoonStart}-${d.afternoonEnd}</td>
+    <td>${d.diesel}</td><td>${d.engage}</td><td>${d.description}</td><td>${actions}</td></tr>`;
   });
 }
 
-// ---- EDIT ENTRY ----
+// ---- EDIT ----
 window.editEntry=async function(id){
   let snap=await getDocs(query(collection(db,"logs"),where("__name__","==",id)));
   let d=snap.docs[0].data(); editIndex.value=id;
@@ -275,82 +258,84 @@ window.loadOverall=async function(){
     let d=docSnap.data(); let dt=new Date(d.date); if((!isNaN(from)&&dt<from)||(!isNaN(to)&&dt>to)) return;
     let k=d.driver+"_"+d.vehicleNumber;
     if(!summary[k]) summary[k]={driver:d.driver,type:d.vehicleType,num:d.vehicleNumber,mins:0,full:0,half:0,noduty:0,diesel:0};
-    if(d.engage==="Full Day") summary[k].full++; 
-    if(d.engage==="Half Day") summary[k].half++;
-    if(d.engage==="No Duty") summary[k].noduty++;
+    if(d.engage==="Full Day") summary[k].full++; if(d.engage==="Half Day") summary[k].half++; if(d.engage==="No Duty") summary[k].noduty++;
     summary[k].diesel+=+d.diesel||0;
     summary[k].mins+=calcMinutes(d.morningStart,d.morningEnd)+calcMinutes(d.afternoonStart,d.afternoonEnd);
   });
   Object.values(summary).forEach(s=>{
     let h=Math.floor(s.mins/60), m=s.mins%60;
-    tbody.innerHTML+=`<tr>
-      <td>${s.driver}</td><td>${s.type}</td><td>${s.num}</td>
-      <td>${h}h ${m}m</td><td>${s.full}</td><td>${s.half}</td><td>${s.noduty}</td><td>${s.diesel}</td>
-    </tr>`;
+    tbody.innerHTML+=`<tr><td>${s.driver}</td><td>${s.type}</td><td>${s.num}</td>
+    <td>${h}h ${m}m</td><td>${s.full}</td><td>${s.half}</td><td>${s.noduty}</td><td>${s.diesel}</td></tr>`;
   });
 }
 
 // ---- FUEL ----
 window.saveFuel=async function(){
-  let liters=+fuelLiters.value, price=+fuelPrice.value, total=liters*price;
-  let d={date:fuelDate.value, liters, price, total};
+  let d={date:fuelDate.value, liters:+fuelLiters.value, price:+fuelPrice.value};
   if(fuelEditId.value){ await updateDoc(doc(db,"fuel",fuelEditId.value),d); alert("✅ Fuel Updated!"); }
   else{ await addDoc(collection(db,"fuel"),d); alert("✅ Fuel Saved!"); }
-  fuelEditId.value=""; fuelDate.value=""; fuelLiters.value=""; fuelPrice.value="";
-  backToDashboard();
+  fuelEditId.value=""; fuelDate.value=""; fuelLiters.value=""; fuelPrice.value=""; backToDashboard();
 }
 
 window.loadFuelReport=async function(){
   showPage("fuelReport");
   let tbody=document.querySelector("#fuelTable tbody"); tbody.innerHTML="";
-  let snap=await getDocs(query(collection(db,"fuel"),orderBy("date"))); 
-  let totalLit=0,totalAmt=0, lastLit=0, lastAmt=0;
-  snap.forEach(docSnap=>{ 
-    let d=docSnap.data(),id=docSnap.id; 
-    totalLit+=+d.liters; totalAmt+=+d.total;
-    lastLit=d.liters; lastAmt=d.total;
-    tbody.innerHTML+=`<tr>
-      <td>${d.date}</td><td>${d.liters}</td><td>${d.price}</td><td>${d.total}</td>
-      <td><button onclick="editFuel('${id}')">✏️</button><button onclick="deleteFuel('${id}')">🗑️</button></td>
-    </tr>`;
+  let snap=await getDocs(query(collection(db,"fuel"),orderBy("date","asc"))); 
+  let total=0, amount=0; let entries=[];
+  snap.forEach(docSnap=>{ let d=docSnap.data(),id=docSnap.id; 
+    let t=+d.liters * (+d.price||0); 
+    entries.push({id,...d,total:t}); total+=+d.liters; amount+=t;
   });
 
+  // Used fuel from logs
   let used=0; let logSnap=await getDocs(collection(db,"logs")); logSnap.forEach(ds=>used+=+ds.data().diesel||0);
-  let oldStock=(totalLit-lastLit)-used; if(oldStock<0) oldStock=0;
 
-  document.getElementById("fuelLimit").innerText=lastLit;
-  document.getElementById("oldStock").innerText=oldStock;
+  // Old stock = previous balance before last fuel entry
+  let lastEntry=entries[entries.length-1];
+  let prevLiters=total-(lastEntry?.liters||0);
+  let oldStock=prevLiters-used;
+
+  // Fill table
+  entries.forEach(d=>{
+    let actions="";
+    if(userRole==="admin"){ actions=`<button onclick="editFuel('${d.id}')">✏️</button><button onclick="deleteFuel('${d.id}')">🗑️</button>`; }
+    tbody.innerHTML+=`<tr><td>${d.date}</td><td>${d.liters}</td><td>${d.price}</td><td>${d.total}</td><td>${actions}</td></tr>`;
+  });
+
+  // Present Fuel
+  let remaining=total-used;
+  document.getElementById("fuelLimit").innerText=lastEntry?.liters||0;
+  document.getElementById("oldStock").innerText=oldStock<0?0:oldStock;
   document.getElementById("usedFuel").innerText=used;
-  document.getElementById("remainingFuel").innerText=(lastLit+oldStock)-used;
-  document.getElementById("presentAmount").innerText=lastAmt;
+  document.getElementById("remainingFuel").innerText=remaining;
+  document.getElementById("presentAmount").innerText=(lastEntry?.liters||0)*(lastEntry?.price||0);
 
-  document.getElementById("overallFuel").innerText=totalLit;
-  document.getElementById("overallAmount").innerText=totalAmt;
+  // Overall Fuel
+  document.getElementById("overallFuel").innerText=total;
   document.getElementById("usedOverall").innerText=used;
-  document.getElementById("remainingOverall").innerText=totalLit-used;
+  document.getElementById("remainingOverall").innerText=remaining;
+  document.getElementById("overallAmount").innerText=amount;
 }
 
 window.editFuel=async function(id){ 
   let snap=await getDocs(query(collection(db,"fuel"),where("__name__","==",id))); 
   let d=snap.docs[0].data();
-  fuelEditId.value=id; fuelDate.value=d.date; fuelLiters.value=d.liters; fuelPrice.value=d.price;
-  showPage("fuelEntry");
+  fuelEditId.value=id; fuelDate.value=d.date; fuelLiters.value=d.liters; fuelPrice.value=d.price; showPage("fuelEntry");
 }
 window.deleteFuel=async id=>{ await deleteDoc(doc(db,"fuel",id)); alert("🗑️ Fuel Deleted"); loadFuelReport(); }
 
 // --- Password Change ---
 window.changeAdminPassword=function(){ 
   if(oldAdminPass.value===localStorage.getItem("adminPass")&&newAdminPass.value){ 
-    localStorage.setItem("adminPass",newAdminPass.value); 
-    alert("Admin password changed!"); backToDashboard(); 
+    localStorage.setItem("adminPass",newAdminPass.value); alert("Admin password changed!"); backToDashboard(); 
   } else alert("Wrong Admin Password"); 
 }
 window.changeViewerPassword=function(){ 
   if(oldViewerPass.value===localStorage.getItem("viewerPass")&&newViewerPass.value){ 
-    localStorage.setItem("viewerPass",newViewerPass.value); 
-    alert("Viewer password changed!"); backToDashboard(); 
+    localStorage.setItem("viewerPass",newViewerPass.value); alert("Viewer password changed!"); backToDashboard(); 
   } else alert("Wrong Viewer Password"); 
 }
+
 </script>
 </body>
 </html>
