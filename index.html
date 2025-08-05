@@ -194,14 +194,6 @@ function setupDashboard(){
   document.getElementById("passBtn").style.display=(userRole==="admin")?"block":"none";
 }
 
-// ---- CLEAR FORM ----
-function clearForm(){
-  editIndex.value=""; date.value=""; vehicleType.value=""; vehicleNumber.value="";
-  driver.value=""; morningStart.value=""; morningEnd.value="";
-  afternoonStart.value=""; afternoonEnd.value=""; diesel.value="";
-  engage.value="Full Day"; description.value="";
-}
-
 // ---- SAVE DATA ----
 window.saveData=async function(){
   let data={date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value, driver:driver.value,
@@ -209,7 +201,7 @@ window.saveData=async function(){
     diesel:diesel.value, engage:engage.value, description:description.value};
   if(editIndex.value){ await updateDoc(doc(db,"logs",editIndex.value),data); alert("✅ Updated!"); }
   else{ await addDoc(collection(db,"logs"),data); alert("✅ Saved!"); }
-  clearForm(); backToDashboard();
+  editIndex.value=""; backToDashboard();
 }
 
 // ---- LOAD REPORTS ----
@@ -272,16 +264,29 @@ window.saveFuel=async function(){
 window.loadFuelReport=async function(){
   showPage("fuelReport");
   let tbody=document.querySelector("#fuelTable tbody"); tbody.innerHTML="";
-  let snap=await getDocs(collection(db,"fuel")); let total=0;
-  snap.forEach(docSnap=>{ let d=docSnap.data(),id=docSnap.id; total+=+d.liters;
-    tbody.innerHTML+=`<tr><td>${d.date}</td><td>${d.liters}</td>
-    <td><button onclick="editFuel('${id}')">✏️</button><button onclick="deleteFuel('${id}')">🗑️</button></td></tr>`;
+  let snap=await getDocs(collection(db,"fuel")); 
+  let fuelEntries=[];
+  snap.forEach(docSnap=>{ fuelEntries.push({id:docSnap.id,...docSnap.data()}); });
+
+  // sort by date
+  fuelEntries.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  fuelEntries.forEach(f=>{
+    tbody.innerHTML+=`<tr><td>${f.date}</td><td>${f.liters}</td>
+    <td><button onclick="editFuel('${f.id}')">✏️</button><button onclick="deleteFuel('${f.id}')">🗑️</button></td></tr>`;
   });
+
+  let total=fuelEntries.reduce((s,f)=>s+Number(f.liters||0),0);
+  let last=fuelEntries.length?Number(fuelEntries[fuelEntries.length-1].liters):0;
+  let oldStock=total-last;
+
   let used=0; let logSnap=await getDocs(collection(db,"logs")); logSnap.forEach(ds=>used+=+ds.data().diesel||0);
-  document.getElementById("fuelLimit").innerText=total;
-  document.getElementById("oldStock").innerText=0;
+
+  document.getElementById("fuelLimit").innerText=last;
+  document.getElementById("oldStock").innerText=oldStock;
   document.getElementById("usedFuel").innerText=used;
   document.getElementById("remainingFuel").innerText=total-used;
+
   document.getElementById("overallFuel").innerText=total;
   document.getElementById("usedOverall").innerText=used;
   document.getElementById("remainingOverall").innerText=total-used;
