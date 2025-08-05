@@ -211,9 +211,12 @@ function clearForm(){
 
 // ---- SAVE DATA ----
 window.saveData=async function(){
-  let data={date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value, driver:driver.value,
-    morningStart:morningStart.value, morningEnd:morningEnd.value, afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
-    diesel:diesel.value, engage:engage.value, description:description.value};
+  let data={
+    date:date.value, vehicleType:vehicleType.value, vehicleNumber:vehicleNumber.value, driver:driver.value,
+    morningStart:morningStart.value, morningEnd:morningEnd.value, 
+    afternoonStart:afternoonStart.value, afternoonEnd:afternoonEnd.value,
+    diesel:diesel.value, engage:engage.value, description:description.value
+  };
   if(editIndex.value){ await updateDoc(doc(db,"logs",editIndex.value),data); alert("✅ Updated!"); }
   else{ await addDoc(collection(db,"logs"),data); alert("✅ Saved!"); }
   clearForm(); backToDashboard();
